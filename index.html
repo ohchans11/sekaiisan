@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="世界遺産">
 <meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex, nofollow">
@@ -120,23 +120,39 @@ ruby rt{font-size:.5em;font-weight:400;color:var(--sub,#6b6b6b)}
 .verdict{font-weight:700;font-size:17px;margin:8px 0 4px}
 .verdict.ok{color:var(--ok)} .verdict.ng{color:var(--ng)}
 .topband{position:sticky;top:0;z-index:50;height:48px;background:#000;margin:0}
+.safetop{position:sticky;top:0;z-index:60;height:env(safe-area-inset-top,0px);background:#000}
+html{background:#000}
+:root{padding-top:0!important}
+.grades{display:flex;gap:8px;margin:0 0 10px}
+.grades button{flex:1;padding:10px 4px;border:1.5px solid var(--ai);border-radius:12px;background:var(--card);color:var(--ai);font:inherit;font-size:17px;font-weight:700;cursor:pointer}
+.grades button[aria-pressed="true"]{background:var(--ai);color:var(--ai-ink)}
+.decks button[hidden]{display:none}
+.gpick{position:fixed;inset:0;z-index:100;background:var(--paper);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px}
+.gpick[hidden]{display:none}
+.gpick h2{font-family:"Zen Old Mincho",serif;font-size:26px;margin:0 0 6px}
+.gpick p{color:var(--sub);margin:0 0 10px}
+.gpick button{width:min(320px,90%);padding:20px;border:0;border-radius:16px;background:var(--ai);color:#fff;font:inherit;font-size:24px;font-weight:700;cursor:pointer}
+.gpick button small{display:block;font-size:13px;font-weight:400;opacity:.85;margin-top:4px}
 </style>
 </head>
 <body>
+<div class="safetop" aria-hidden="true"></div>
+<div class="gpick" id="gpick" hidden><h2>世界遺産検定</h2><p>勉強する級を選んでください</p><button data-g="4">4級<small>日本の遺産（4級で出た語）</small></button><button data-g="3">3級<small>日本・基礎知識・海外</small></button><button data-g="2">2級<small>基礎・日本・海外</small></button></div>
 <div class="wrap">
   <header>
     <h1>世界遺産 一問一答<small id="sub">3級対策</small></h1>
     <div class="score">覚えた <b id="known">0</b> / <span id="total">30</span></div>
   </header>
   <div class="bar"><i id="barfill"></i></div>
-  <div class="decks" role="group" aria-label="問題セット">
+  <div class="grades" role="group" aria-label="級"><button data-grade="4">4級</button><button data-grade="3">3級</button><button data-grade="2">2級</button></div>
+<div class="decks" role="group" aria-label="問題セット">
     <button data-deck="core" aria-pressed="true">日本<br>最重要</button>
     <button data-deck="k4" aria-pressed="false">日本<br>4級の語</button>
     <button data-deck="kiso" aria-pressed="false">基礎知識</button>
     <button data-deck="kaigai" aria-pressed="false">海外</button>
-    <button data-deck="k2b" aria-pressed="false">2級<br>基礎</button>
-    <button data-deck="k2j" aria-pressed="false">2級<br>日本</button>
-    <button data-deck="w1" aria-pressed="false">2級<br>海外①</button>
+    <button data-deck="k2b" aria-pressed="false">基礎<br>知識</button>
+    <button data-deck="k2j" aria-pressed="false">日本の<br>遺産</button>
+    <button data-deck="w1" aria-pressed="false">海外①<br>3〜6章</button>
   </div>
   <div class="modes" role="group" aria-label="出題する問題">
     <button id="m3" aria-pressed="true">▶ 3分</button>
@@ -231,7 +247,7 @@ function updateScore(){const N=C().length,k=C().filter((c,i)=>srs[i]&&srs[i].b>0
 const STORY2={1:'① 世界遺産の誕生',2:'② 決める人たち',3:'③ 登録までの道',4:'④ 考え方と危機',5:'⑤ 縄文から古墳へ',6:'⑥ 飛鳥から奈良へ',7:'⑦ 平安時代',8:'⑧ 信仰の山と道',9:'⑨ 武士と王国',10:'⑩ 江戸のくらし',11:'⑪ 近代化と戦争',12:'⑫ 日本の自然'};
 function fillStory2(d){const r=d==='k2b'?[1,2,3,4]:[5,6,7,8,9,10,11,12];$('storySel2').innerHTML='<option value="0">すべての物語</option>'+r.map(k=>`<option value="${k}">${STORY2[k]}</option>`).join('');}
 function migrateK2(d){try{if(ls.get('sekai3-srs-'+d))return;const old=JSON.parse(ls.get('sekai3-srs-k2s')||'null');if(!old)return;const n={};DECKS[d].forEach((c,i)=>{if(old[c.oi])n[i]=old[c.oi];});ls.set('sekai3-srs-'+d,JSON.stringify(n));}catch(e){}}
-function setDeck(d){deck=d;if(d==='k2b'||d==='k2j'){migrateK2(d);fillStory2(d);}load();$('storyWrap').hidden=d!=='kaigai';$('storyWrap2').hidden=!(d==='k2b'||d==='k2j');document.querySelectorAll('.decks button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.deck===d));$('sub').textContent=(d==='k2'||(d==='k2b'||d==='k2j')||d==='w1'?'2級対策　':'3級対策　')+NAMES[d];save();
+function setDeck(d){deck=d;try{ls.set('sekai3-last-'+gradeOf(d),d)}catch(e){}if(d==='k2b'||d==='k2j'){migrateK2(d);fillStory2(d);}load();$('storyWrap').hidden=d!=='kaigai';$('storyWrap2').hidden=!(d==='k2b'||d==='k2j');document.querySelectorAll('.decks button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.deck===d));$('sub').textContent=gradeOf(d)+'級対策　'+NAMES[d];save();
   const ss=loadSess();
   if(ss&&Array.isArray(ss.queue)&&ss.queue.length){
     if(ss.s1)$('storySel').value=ss.s1; if(ss.s2)$('storySel2').value=ss.s2;
@@ -354,7 +370,17 @@ $('storySel').onchange=()=>start(mode);
 $('storySel2').onchange=()=>start(mode);
 $('reset').onclick=()=>{if(confirm(`「${NAMES[deck]}」の記録をすべて消しますか？`)){srs={};save();start('due')}};
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveSess()});
-setDeck(deck);
+const GRADE_DECKS={'4':['k4'],'3':['core','kiso','kaigai'],'2':['k2b','k2j','w1']};
+const gradeOf=d=>Object.keys(GRADE_DECKS).find(g=>GRADE_DECKS[g].includes(d))||'3';
+function showGrade(g){
+  document.querySelectorAll('.grades button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.grade===g));
+  document.querySelectorAll('.decks button').forEach(b=>{b.hidden=!GRADE_DECKS[g].includes(b.dataset.deck);});
+  const decksEl=document.querySelector('.decks'); decksEl.style.display=GRADE_DECKS[g].length>1?'flex':'none';
+}
+function pickGrade(g){ try{ls.set('sekai3-grade',g)}catch(e){} showGrade(g); const last=ls.get('sekai3-last-'+g); const d=(last&&GRADE_DECKS[g].includes(last))?last:GRADE_DECKS[g][0]; setDeck(d); }
+document.querySelectorAll('.grades button').forEach(b=>b.onclick=()=>pickGrade(b.dataset.grade));
+document.querySelectorAll('#gpick button').forEach(b=>b.onclick=()=>{ $('gpick').hidden=true; pickGrade(b.dataset.g); });
+(function(){ const g=ls.get('sekai3-grade'); if(!g){ $('gpick').hidden=false; showGrade(gradeOf(deck)); setDeck(deck); } else { showGrade(g); const d=GRADE_DECKS[g].includes(deck)?deck:GRADE_DECKS[g][0]; setDeck(d); } })();
 </script>
 </body>
 </html>
